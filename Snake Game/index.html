@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Snake Game</title>
+  <style>
+    body {
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      flex-direction: column;
+    }
+
+    canvas {
+      background: #222;
+      border: 3px solid #0f0;
+      display: none;
+      image-rendering: pixelated;
+    }
+
+    /* Shared overlay styling for menus and game over */
+    #main-menu, #skin-menu, #credit-screen, #game-over {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(17, 17, 17, 0.85);
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      text-align: center;
+      background-size: cover;
+      background-position: center;
+    }
+
+    #main-menu {
+      background-image: url('assets/background-main.jpg');
+    }
+
+    #game-over {
+      background-image: url('assets/background-gameover.jpg');
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #0f0;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: transform 0.2s, background-color 0.3s;
+    }
+
+    button:hover {
+      transform: scale(1.1);
+      background-color: #0b0;
+    }
+
+    #mute-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 5px 10px;
+      background: #0f0;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .slider-container {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    input[type="range"] {
+      width: 150px;
+    }
+
+    .skin-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 5px;
+    }
+
+    .skin-option img {
+      width: 30px;
+      height: 30px;
+      border: 2px solid #fff;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Main Menu -->
+  <div id="main-menu">
+    <h1>Snake Game</h1>
+    <button id="start-game">Start Game</button>
+    <button id="open-skins">Skins</button>
+    <button id="open-credits">Credits</button>
+    <div class="slider-container">
+      <label for="volume-slider">Volume</label>
+      <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="1" />
+    </div>
+    <button id="quit-game">Quit</button>
+  </div>
+
+  <!-- Skin Selection Menu -->
+  <div id="skin-menu">
+    <h2>Select Skin</h2>
+    <div class="skin-option">
+      <img src="assets/snake-head.png" alt="Head Default" />
+      <img src="assets/snake-body.png" alt="Default" />
+      <button data-skin="default">Default</button>
+    </div>
+    <div class="skin-option">
+      <img src="assets/snake-head-blue.png" alt="Head Blue" />
+      <img src="assets/snake-blue.png" alt="Blue" />
+      <button data-skin="blue">Blue</button>
+    </div>
+    <div class="skin-option">
+      <img src="assets/snake-head-red.png" alt="Head Red" />
+      <img src="assets/snake-red.png" alt="Red" />
+      <button data-skin="red">Red</button>
+    </div>
+    <div class="skin-option">
+      <img src="assets/snake-head-yellow.png" alt="Head Yellow" />
+      <img src="assets/snake-yellow.png" alt="Yellow" />
+      <button data-skin="yellow">Yellow</button>
+    </div>
+    <div class="skin-option">
+      <img src="assets/snake-head-orange.png" alt="Head Orange" />
+      <img src="assets/snake-orange.png" alt="Orange" />
+      <button data-skin="orange">Orange</button>
+    </div>
+    <div class="skin-option">
+      <img src="assets/snake-head-pink.png" alt="Head Pink" />
+      <img src="assets/snake-pink.png" alt="Pink" />
+      <button data-skin="pink">Pink</button>
+    </div>
+    <div class="skin-option">
+      <img src="assets/snake-head-violet.png" alt="Head Violet" />
+      <img src="assets/snake-violet.png" alt="Violet" />
+      <button data-skin="violet">Violet</button>
+    </div>
+    <button id="back-from-skins">Back to Menu</button>
+  </div>
+
+  <!-- Credit Screen -->
+  <div id="credit-screen">
+    <h2>Credits</h2>
+    <p> Developer: <br>
+        Reden <br>
+        ChatGPT <br>
+    </p>
+    <p> Note: If you encounter a bug, <br>
+    It is not a bug but a feature</p>
+    <button id="back-from-credits">Back to Menu</button>
+  </div>
+
+  <!-- Game Canvas -->
+  <canvas id="game" width="1080" height="720"></canvas>
+  <button id="mute-btn">🔊 Mute</button>
+
+  <!-- Game Over -->
+  <div id="game-over">
+    <p>Game Over! Your Score: <span id="final-score">0</span></p>
+    <button id="restart-btn">Restart</button>
+    <button id="main-menu-btn">Main Menu</button>
+    <button id="quit-after">Quit</button>
+  </div>
+
+  <audio id="background-music" src="audio/background-music.mp3" preload="auto" loop></audio>
+  <script>
+    const menuEl = document.getElementById('main-menu');
+    const skinMenuEl = document.getElementById('skin-menu');
+    const creditEl = document.getElementById('credit-screen');
+    const gameEl = document.getElementById('game');
+    const gameOverEl = document.getElementById('game-over');
+    const startBtn = document.getElementById('start-game');
+    const openSkinsBtn = document.getElementById('open-skins');
+    const backSkinsBtn = document.getElementById('back-from-skins');
+    const openCredBtn = document.getElementById('open-credits');
+    const backCredBtn = document.getElementById('back-from-credits');
+    const quitMainBtn = document.getElementById('quit-game');
+    const restartBtn = document.getElementById('restart-btn');
+    const mainMenuBtn = document.getElementById('main-menu-btn');
+    const quitAfterBtn = document.getElementById('quit-after');
+    const muteBtn = document.getElementById('mute-btn');
+    const volumeSlider = document.getElementById('volume-slider');
+    const finalScoreEl = document.getElementById('final-score');
+
+    const canvas = gameEl, ctx = canvas.getContext('2d');
+    const box = 30;
+    let snake, food, dx, dy, nextDx, nextDy, score, gameInterval;
+    let isMuted = false, volume = 1;
+    let selectedSkin = localStorage.getItem('selectedSkin') || 'default';
+
+    const skins = {
+      default: { head: 'assets/snake-head.png', body: 'assets/snake-body.png' },
+      blue:    { head: 'assets/snake-head-blue.png', body: 'assets/snake-blue.png' },
+      red:     { head: 'assets/snake-head-red.png', body: 'assets/snake-red.png' },
+      yellow:  { head: 'assets/snake-head-yellow.png', body: 'assets/snake-yellow.png' },
+      orange:  { head: 'assets/snake-head-orange.png', body: 'assets/snake-orange.png' },
+      pink:    { head: 'assets/snake-head-pink.png', body: 'assets/snake-pink.png' },
+      violet:  { head: 'assets/snake-head-violet.png', body: 'assets/snake-violet.png' }
+    };
+    const skinImgs = {};
+    Object.entries(skins).forEach(([k,s])=>{ const h=new Image(), b=new Image(); h.src=s.head; b.src=s.body; skinImgs[k]={head:h,body:b}; });
+    const foodImg=new Image(); foodImg.src='assets/food.png';
+    const bgImg=new Image(); bgImg.src='assets/background.jpg';
+    const bgMusic=document.getElementById('background-music');
+    const gameOverSound=new Audio('audio/game-over.mp3');
+
+    // Show main menu
+    menuEl.style.display='flex';
+
+    // Button handlers
+    startBtn.onclick=()=>{ gameOverEl.style.display='none'; menuEl.style.display='none'; canvas.style.display='block'; initGame(); gameInterval=setInterval(draw,100); };
+    openSkinsBtn.onclick=()=>{ menuEl.style.display='none'; skinMenuEl.style.display='flex'; };
+    backSkinsBtn.onclick=()=>{ skinMenuEl.style.display='none'; menuEl.style.display='flex'; };
+    openCredBtn.onclick=()=>{ menuEl.style.display='none'; creditEl.style.display='flex'; };
+    backCredBtn.onclick=()=>{ creditEl.style.display='none'; menuEl.style.display='flex'; };
+    quitMainBtn.onclick=()=>alert('Close the tab to quit.');
+
+    muteBtn.onclick=()=>{ isMuted=!isMuted; muteBtn.textContent=isMuted?'🔇 Unmute':'🔊 Mute'; isMuted?bgMusic.pause():bgMusic.play(); };
+    volumeSlider.oninput=e=>{ volume=e.target.value; bgMusic.volume=volume; };
+
+    document.querySelectorAll('#skin-menu button[data-skin]').forEach(btn=>btn.onclick=e=>{
+      const s=e.target.dataset.skin;
+      if(skins[s]){ selectedSkin=s; localStorage.setItem('selectedSkin',s); }
+      skinMenuEl.style.display='none';
+      menuEl.style.display='flex';
+    });
+
+    function initGame(){
+      snake=[{x:9*box,y:10*box}];
+      food=randomFood();
+      dx=box; dy=0;
+      nextDx=dx; nextDy=dy;
+      score=0;
+      bgMusic.currentTime=0;
+      bgMusic.volume=volume;
+      if(!isMuted) bgMusic.play();
+    }
+
+    function randomFood(){
+      let f;
+      do{
+        f={x:Math.floor(Math.random()*(canvas.width/box))*box,y:Math.floor(Math.random()*(canvas.height/box))*box};
+      }while(snake.some(s=>s.x===f.x&&s.y===f.y));
+      return f;
+    }
+
+    document.addEventListener('keydown',e=>{
+      if(e.key==='ArrowLeft'&&dx===0){nextDx=-box;nextDy=0;}
+      if(e.key==='ArrowUp'&&dy===0){nextDx=0;nextDy=-box;}
+      if(e.key==='ArrowRight'&&dx===0){nextDx=box;nextDy=0;}
+      if(e.key==='ArrowDown'&&dy===0){nextDx=0;nextDy=box;}
+    });
+
+    function draw(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(bgImg,0,0,canvas.width,canvas.height);
+      dx=nextDx; dy=nextDy;
+      const skin=skinImgs[selectedSkin];
+      snake.forEach((seg,i)=>ctx.drawImage(i===0?skin.head:skin.body,seg.x,seg.y,box,box));
+      const head={x:snake[0].x+dx,y:snake[0].y+dy};
+      if(head.x<0||head.x>=canvas.width||head.y<0||head.y>=canvas.height||snake.some((s,i)=>i>0&&s.x===head.x&&s.y===head.y)) return gameOver();
+      if(head.x===food.x&&head.y===food.y){
+        score++;
+        food=randomFood();
+        if(!isMuted){const es=new Audio('audio/eat-food.mp3');es.volume=volume;es.play();}
+      } else snake.pop();
+      snake.unshift(head);
+      ctx.drawImage(foodImg,food.x,food.y,box,box);
+      ctx.fillStyle='#fff';
+      ctx.font='32px Arial';
+      ctx.fillText('Score: '+score,20,40);
+    }
+
+    function gameOver(){
+      clearInterval(gameInterval);
+      canvas.style.display='none';
+      finalScoreEl.textContent=score;
+      gameOverEl.style.display='flex';
+      bgMusic.pause();
+      if(!isMuted){gameOverSound.volume=volume;gameOverSound.play();}
+    }
+
+    restartBtn.onclick=()=>{ initGame(); canvas.style.display='block'; gameOverEl.style.display='none'; gameInterval=setInterval(draw,100); };
+    mainMenuBtn.onclick=()=>{ clearInterval(gameInterval); gameOverEl.style.display='none'; menuEl.style.display='flex'; canvas.style.display='none'; bgMusic.pause(); };
+    quitAfterBtn.onclick=()=>alert('Close the tab to quit.');
+  </script>
+</body>
+</html>
